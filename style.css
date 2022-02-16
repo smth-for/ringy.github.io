@@ -1,0 +1,41 @@
+body {
+    bottom: 0;
+    font-family: 'Titillium Web', sans-serif;
+    color: white;
+    left: 0;
+    margin: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform-origin: 0px 0px;
+    overflow: hidden;
+  }
+  
+  .container {
+    position: absolute;
+    background-color: #596e73;
+    height: 768px;
+    width: 1024px;
+  }
+  
+  .btn {
+    position: absolute;
+    right:0;
+    top:0
+  }
+  
+  .input_video {
+    position:absolute;
+    top: -0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  
+  .output_canvas {
+    position:absolute;
+    height: 768px;
+    width: 1024px;
+    left: 0;
+    top: 0;
+  }

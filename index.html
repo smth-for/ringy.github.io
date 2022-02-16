@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css">
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script defer type="module" src="main.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <video class="input_video"></video>
+      <canvas class="output_canvas" width="1024px" height="768px"></canvas>
+      <button id="run" class="btn">Click here to Run</button>
+      <div class="loading">
+        <div class="spinner"></div>
+        <div class="message">Loading</div>
+      </div>
+    </div>
+  </body>
+</html>

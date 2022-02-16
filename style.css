@@ -21,7 +21,11 @@ body {
   .btn {
     position: absolute;
     right:0;
-    top:0
+    top:0;
+    height: 100%;
+    width: 100%;
+    color: deeppink;
+    background-color: black;
   }
   
   .input_video {

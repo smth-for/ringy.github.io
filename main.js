@@ -4,6 +4,7 @@ import { GLTFLoader } from "./res/js/GLTFLoader.js";
 
 const videoElement = document.getElementsByClassName("input_video")[0];
 const canvasElement = document.getElementsByClassName("output_canvas")[0];
+const btnRun = document.getElementById("run");
 
 const handMesh = new Hands({
   locateFile: (file) => {
@@ -57,7 +58,7 @@ function initThreeApp(canvas, w, h) {
 
   // add a light
   const color = 0xffffff;
-  const intensity = 1;
+  const intensity = 4;
   const light = new THREE.DirectionalLight(color, intensity);
   light.position.set(-1, 2, 4);
   scene.add(light);
@@ -76,10 +77,10 @@ function initThreeApp(canvas, w, h) {
   //scene.add(cube);
 
   const plane = new THREE.Mesh(
-    new THREE.PlaneBufferGeometry(3, 3),
+    new THREE.PlaneBufferGeometry(3.1, 3.1),
     new THREE.MeshBasicMaterial({
       color: 0xffffff,
-      opacity: 0.9,
+      opacity: 0.95,
       transparent: true,
       map: new THREE.VideoTexture(videoElement),
     })
@@ -101,6 +102,16 @@ function initThreeApp(canvas, w, h) {
     (gltf) => {
       ring = gltf.scene;
       ring.scale.set(4, 4, 4);
+      ring.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          child.material.side = THREE.DoubleSide;
+          child.material.envMap = new THREE.VideoTexture(videoElement);
+          child.material.needsUpdate = true;
+        }
+      });
+      ring.visible = false;
       scene.add(ring);
 
       gltf.animations; // Array<THREE.AnimationClip>
@@ -133,6 +144,7 @@ initVideo(videoElement, 800, 800);
 const threeApp = initThreeApp(canvasElement, 800, 800);
 
 const onResults = function (res) {
+  btnRun.style.display = "none";
   const landmarks = res.multiHandLandmarks;
   if (landmarks?.length > 0) {
     //console.log(res);
@@ -140,6 +152,7 @@ const onResults = function (res) {
   }
 
   if (
+    !ring ||
     !landmarks ||
     !landmarks[0] ||
     !landmarks[0][14] ||
@@ -225,8 +238,6 @@ const onResults = function (res) {
   ring.scale.z = scale*45;
 
   const hand_info = res.multiHandedness[0].label;
-  console.log(rotateY);
-
   // ring.rotation.x = rotateX + Math.PI / 2;
   ring.rotation.z = -rotateZ + Math.PI / 2;
 
@@ -259,11 +270,18 @@ const run = async function () {
   //ring.rotation.z += 0.1;
 };
 
-document.getElementById("run").addEventListener("click", run);
+
+btnRun.addEventListener("click", (evt) => {
+  console.log(evt);
+  evt.target.innerText = 'WAITING...';
+  run();
+});
 
 function initVideo(video, w, h) {
+  const width = w || window.innerWidth;
+  const height = h || window.innerHeight;
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    const constraints = { video: { width: w, height: h, facingMode: "environment" } };
+    const constraints = { video: { width, height, facingMode: "environment" } };
 
     navigator.mediaDevices
       .getUserMedia(constraints)

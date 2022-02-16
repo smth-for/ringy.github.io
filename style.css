@@ -14,8 +14,8 @@ body {
   .container {
     position: absolute;
     background-color: #596e73;
-    height: 768px;
-    width: 1024px;
+    height: 800px;
+    width: 800px;
   }
   
   .btn {
@@ -34,8 +34,8 @@ body {
   
   .output_canvas {
     position:absolute;
-    height: 768px;
-    width: 1024px;
+    height: 800px;
+    width: 800px;
     left: 0;
     top: 0;
   }

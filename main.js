@@ -1,4 +1,6 @@
-import * as THREE from "https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js";
+import * as THREE from "./res/js/three.module.js";
+import { DRACOLoader } from "./res/js/DRACOLoader.js";
+import { GLTFLoader } from "./res/js/GLTFLoader.js";
 
 const videoElement = document.getElementsByClassName("input_video")[0];
 const canvasElement = document.getElementsByClassName("output_canvas")[0];
@@ -14,6 +16,8 @@ handMesh.setOptions({
   minDetectionConfidence: 0.5,
   minTrackingConfidence: 0.5,
 });
+
+let ring;
 
 function initThreeApp(canvas, w, h) {
   const renderer = new THREE.WebGLRenderer({
@@ -69,10 +73,51 @@ function initThreeApp(canvas, w, h) {
     opacity: 0.8,
   });
   const cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
+  //scene.add(cube);
 
-  const plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(4, 3), new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.9, transparent: true, map: new THREE.VideoTexture( videoElement ) }));
+  const plane = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(3, 3),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      opacity: 0.9,
+      transparent: true,
+      map: new THREE.VideoTexture(videoElement),
+    })
+  );
   scene.add(plane);
+
+  const loader = new GLTFLoader();
+
+  // Optional: Provide a DRACOLoader instance to decode compressed mesh data
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath("./res/js/draco/");
+  loader.setDRACOLoader(dracoLoader);
+
+  // Load a glTF resource
+  loader.load(
+    // resource URL
+    "./res/models/MaxiLondonBlue.glb",
+    // called when the resource is loaded
+    (gltf) => {
+      ring = gltf.scene;
+      ring.scale.set(4, 4, 4);
+      scene.add(ring);
+
+      gltf.animations; // Array<THREE.AnimationClip>
+      gltf.scene; // THREE.Group
+      gltf.scenes; // Array<THREE.Group>
+      gltf.cameras; // Array<THREE.Camera>
+      gltf.asset; // Object
+    },
+    // called while loading is progressing
+    function (xhr) {
+      console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+    },
+    // called when loading has errors
+    function (error) {
+      console.log("An error happened");
+    }
+  );
 
   return {
     renderer,
@@ -84,30 +129,122 @@ function initThreeApp(canvas, w, h) {
   };
 }
 
-initVideo(videoElement, 1024, 768);
-const threeApp = initThreeApp(canvasElement, 1024, 768);
+initVideo(videoElement, 800, 800);
+const threeApp = initThreeApp(canvasElement, 800, 800);
+
 const onResults = function (res) {
   const landmarks = res.multiHandLandmarks;
   if (landmarks?.length > 0) {
-    console.log(res);
-    console.log(landmarks);
+    //console.log(res);
+    //console.log(landmarks);
   }
 
-  if (!landmarks || !landmarks[0] || !landmarks[0][14] || !landmarks[0][13]) return;
-  const { x, y, z } = landmarks[0][14];
-  console.log(landmarks[0][14]);
+  if (
+    !landmarks ||
+    !landmarks[0] ||
+    !landmarks[0][14] ||
+    !landmarks[0][13] ||
+    !landmarks[0][0] ||
+    !landmarks[0][9]
+  ){
+    ring.visible = false;
+    return;
+  }
+
+  ring.visible = true;
+  //const { x, y, z } = landmarks[0][13];
+  //console.log(landmarks[0][14]);
+
+  const wrist = new THREE.Vector3(
+    landmarks[0][0].x,
+    landmarks[0][0].y,
+    landmarks[0][0].z
+  );
+  const pointA = new THREE.Vector3(
+    landmarks[0][13].x,
+    landmarks[0][13].y,
+    landmarks[0][13].z
+  );
+  const pointB = new THREE.Vector3(
+    landmarks[0][14].x,
+    landmarks[0][14].y,
+    landmarks[0][14].z
+  );
+  const pointN = new THREE.Vector3(
+    landmarks[0][9].x,
+    landmarks[0][9].y,
+    landmarks[0][9].z
+  );
+  const percentage = 0.65;
+
+  var dir = pointB.clone().sub(pointA);
+  var length = dir.length();
+  dir = dir.normalize().multiplyScalar(length * percentage);
+  const point = pointA.clone().add(dir);
+
+  const rotateZ = Math.atan(
+    (landmarks[0][14].y - landmarks[0][13].y) /
+      (landmarks[0][14].x - landmarks[0][13].x)
+  );
+  const rotateX = Math.atan(
+    (landmarks[0][14].z - landmarks[0][0].z) /
+      (landmarks[0][14].y - landmarks[0][0].y)
+  );
+  const rotateY = Math.atan(
+    (landmarks[0][9].z - landmarks[0][13].z) /
+      (landmarks[0][9].x - landmarks[0][13].x)
+  );
+
+  const scale_x = landmarks[0][13].x - landmarks[0][14].x;
+  const scale_y = landmarks[0][13].y - landmarks[0][14].y;
+  const scale_z = landmarks[0][13].z - landmarks[0][14].z;
+  //calculate the distance between landmarks[13] and [14]
+  const scale = Math.sqrt(
+    (landmarks[0][14].x - landmarks[0][13].x) ** 2 +
+      (landmarks[0][14].y - landmarks[0][13].y) ** 2 +
+      (landmarks[0][14].z - landmarks[0][13].z) ** 2
+  );
 
   // landmarks[0][1] == nose position(face center point)
   // use landmarks xy value to calculate the screen xy
   let vec = new THREE.Vector3();
   let pos = new THREE.Vector3();
-  vec.set(x * 2 - 1, -y * 2 + 1, z);
+  vec.set(point.x * 2 - 1, -point.y * 2 + 1, point.z);
   vec.unproject(threeApp.camera);
   vec.sub(threeApp.camera.position).normalize();
   let distance = -threeApp.camera.position.z / vec.z;
   pos.copy(threeApp.camera.position).add(vec.multiplyScalar(distance));
   threeApp.cube.position.x = pos.x;
   threeApp.cube.position.y = pos.y;
+  
+  ring.position.x = pos.x;
+  ring.position.y = pos.y;
+
+  ring.scale.x = scale*45;
+  ring.scale.y = scale*45;
+  ring.scale.z = scale*45;
+
+  const hand_info = res.multiHandedness[0].label;
+  console.log(rotateY);
+
+  // ring.rotation.x = rotateX + Math.PI / 2;
+  ring.rotation.z = -rotateZ + Math.PI / 2;
+
+  if (hand_info === "Left") {
+    if (rotateY < 0) {
+      ring.rotation.y = rotateY + Math.PI / 16;
+    } else {
+      ring.rotation.y = rotateY + Math.PI + Math.PI / 16;
+    }
+  } else {
+    if (rotateY > 0) {
+      ring.rotation.y = rotateY - Math.PI / 16;
+    } else {
+      ring.rotation.y = rotateY + Math.PI - Math.PI / 16;
+    }
+  }
+
+  // ring.lookAt(pointA);
 
   // todo
   // got the cube xy then how to get the z value?
@@ -119,13 +256,14 @@ const run = async function () {
   threeApp.render();
   await handMesh.send({ image: videoElement });
   requestAnimationFrame(run);
+  //ring.rotation.z += 0.1;
 };
 
 document.getElementById("run").addEventListener("click", run);
 
 function initVideo(video, w, h) {
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    const constraints = { video: { width: w, height: h, facingMode: "user" } };
+    const constraints = { video: { width: w, height: h, facingMode: "environment" } };
 
     navigator.mediaDevices
       .getUserMedia(constraints)

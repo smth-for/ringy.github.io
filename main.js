@@ -23,7 +23,7 @@ let ring;
 function initThreeApp(canvas, w, h) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    alpha: true,
+    alpha: false,
     antialias: true,
   });
 
@@ -57,11 +57,19 @@ function initThreeApp(canvas, w, h) {
   render();
 
   // add a light
-  const color = 0xffffff;
+  const color = 0xfefefe;
   const intensity = 4;
-  const light = new THREE.DirectionalLight(color, intensity);
-  light.position.set(-1, 2, 4);
-  scene.add(light);
+  const dirLight = new THREE.DirectionalLight(color, intensity);
+  dirLight.position.set(-1, 2, 4);
+  scene.add(dirLight);
+
+  const spotLight = new THREE.SpotLight(color, 2);
+  spotLight.position.copy(camera.position);
+  scene.add(spotLight);
+
+  spotLight.onAfterRender(() => {
+    spotLight.lookAt(ring.position);
+  })
 
   // add a box
   const boxWidth = 0.2;
@@ -70,8 +78,8 @@ function initThreeApp(canvas, w, h) {
   const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
   const material = new THREE.MeshPhongMaterial({
     color: 0x44aa88,
-    transparent: true,
-    opacity: 0.8,
+    //transparent: true,
+    //opacity: 0.8,
   });
   const cube = new THREE.Mesh(geometry, material);
   //scene.add(cube);
@@ -80,22 +88,30 @@ function initThreeApp(canvas, w, h) {
     new THREE.PlaneBufferGeometry(3.1, 3.1),
     new THREE.MeshBasicMaterial({
       color: 0xffffff,
-      opacity: 0.95,
-      transparent: true,
+      //opacity: 0.95,
+      //transparent: true,
       map: new THREE.VideoTexture(videoElement),
     })
   );
   scene.add(plane);
 
-  const loader = new GLTFLoader();
+  const textureLoader = new THREE.TextureLoader();
 
+	const textureEquirec = textureLoader.load( './res/textures/envMap.jpeg' );
+	textureEquirec.mapping = THREE.EquirectangularReflectionMapping;
+	textureEquirec.encoding = THREE.sRGBEncoding;
+
+	scene.background = textureEquirec;
+	scene.environment = textureEquirec;
+
+  const gltfLoader = new GLTFLoader();
   // Optional: Provide a DRACOLoader instance to decode compressed mesh data
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath("./res/js/draco/");
-  loader.setDRACOLoader(dracoLoader);
+  gltfLoader.setDRACOLoader(dracoLoader);
 
   // Load a glTF resource
-  loader.load(
+  gltfLoader.load(
     // resource URL
     "./res/models/MaxiLondonBlue.glb",
     // called when the resource is loaded
@@ -107,8 +123,9 @@ function initThreeApp(canvas, w, h) {
           child.castShadow = true;
           child.receiveShadow = true;
           child.material.side = THREE.DoubleSide;
-          child.material.envMap = new THREE.VideoTexture(videoElement);
           child.material.needsUpdate = true;
+          child.position.z = -0.01;
+          child.updateMatrixWorld();
         }
       });
       ring.visible = false;
@@ -232,6 +249,7 @@ const onResults = function (res) {
   
   ring.position.x = pos.x;
   ring.position.y = pos.y;
+  //ring.position.z = pos.z - 0.1;
 
   ring.scale.x = scale*45;
   ring.scale.y = scale*45;

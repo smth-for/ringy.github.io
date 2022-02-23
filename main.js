@@ -113,7 +113,7 @@ function initThreeApp(canvas, w, h) {
   // Load a glTF resource
   gltfLoader.load(
     // resource URL
-    "./res/models/MaxiLondonBlue.glb",
+    "./res/models/Pomellato.glb",
     // called when the resource is loaded
     (gltf) => {
       ring = gltf.scene;
@@ -124,8 +124,15 @@ function initThreeApp(canvas, w, h) {
           child.receiveShadow = true;
           child.material.side = THREE.DoubleSide;
           child.material.needsUpdate = true;
-          child.position.z = -0.01;
+          child.position.z = -0.8;
           child.updateMatrixWorld();
+          if(child?.userData?.name === "pomellatoNudo_gem49"){
+            //child.material.map = null;
+            child.material.transmission = 0.8;
+            child.material.sheen = 0.5;
+            child.material.needsUpdate = true;
+          }
+          console.log(child);
         }
       });
       ring.visible = false;
@@ -251,9 +258,12 @@ const onResults = function (res) {
   ring.position.y = pos.y;
   //ring.position.z = pos.z - 0.1;
 
-  ring.scale.x = scale*45;
-  ring.scale.y = scale*45;
-  ring.scale.z = scale*45;
+  //ring.scale.x = scale*45;
+  //ring.scale.y = scale*45;
+  //ring.scale.z = scale*45;
+  ring.scale.x = scale * 1.5;
+  ring.scale.y = scale * 1.5;
+  ring.scale.z = scale * 1.5;
 
   const hand_info = res.multiHandedness[0].label;
   // ring.rotation.x = rotateX + Math.PI / 2;
